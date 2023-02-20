@@ -30,7 +30,7 @@ app.get('/urls', (req, res) => {
 
 //⬇️WThe end point for such a page will be in the format /urls/:id. The : in front of id indicates that id is a route parameter. This means that the value in this part of the url will be available in the req.params object.
 app.get('/urls/:id', (req, res) => {
-  const templateVars = {id: req.params.id, longURL: req.params.urls};
+  const templateVars = {id: req.params.id, longURL: urlDatabase[req.params.id]};
   res.render("urls_show", templateVars);
 });
 
