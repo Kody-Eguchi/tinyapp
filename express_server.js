@@ -2,6 +2,21 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
+//Parse all the data to human readable
+app.use(express.urlencoded({ extended: true }));
+
+
+//generateRandomString function
+const generateRandomString = function() {
+  let result = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 5; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return result;
+};
+
 //Setting up EJS
 app.set("view engine", "ejs");
 
@@ -38,6 +53,10 @@ app.get('/urls/:id', (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+});
 
 
 // app.get('*', (req, res) => {
