@@ -4,8 +4,7 @@ const PORT = 8080;
 
 //Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
-
-
+ 
 //generateRandomString function
 const generateRandomString = function() {
   let result = '';
@@ -16,8 +15,6 @@ const generateRandomString = function() {
 
   return result;
 };
-
-
 
 //Setting up EJS
 app.set("view engine", "ejs");
@@ -31,7 +28,8 @@ app.get('/', (req, res) => {
   res.send(`Hello!`);
 });
 
-app.get(`/urls.json`, (req, res) => {
+//Get a JSON data
+app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
@@ -39,12 +37,14 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//Render /urls page
 app.get('/urls', (req, res) => {
   //⬇️When sending variables to an EJS template, we need to send them inside an object, even if we are only sending one variable. This is so we can use the key of that variable (in the above case the key is urls) to access the data within our template.
   const templateVars = {urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
 
+//Render /urls/new page
 app.get('/urls/new', (req, res) => {
   res.render("urls_new");
 });
@@ -55,16 +55,25 @@ app.get('/urls/:id', (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//Generate a shortened URL and create a key-value pair
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
+//Get a value from a form input
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
+});
+
+//Get a Post request to remove a URL
+app.post("/urls/:id/delete", (req, res) => {
+  console.log(req.params.id);
+  delete urlDatabase[req.params.id];
+  res.redirect('/urls');
 });
 
 app.get('*', (req, res) => {
