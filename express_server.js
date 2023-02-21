@@ -87,6 +87,13 @@ app.post('/urls/:id', (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+//Submit a username for login
+app.post('/login', (req, res) => {
+  const username = req.body.username;
+  res.cookie("usernameCookie", username);
+  res.redirect('/urls');
+});
+
 app.get('*', (req, res) => {
   res.send(`404 Page Not Found`);
 });
