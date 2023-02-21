@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
-//Parse all the data to human readable
+//Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
 
 
@@ -16,6 +16,8 @@ const generateRandomString = function() {
 
   return result;
 };
+
+
 
 //Setting up EJS
 app.set("view engine", "ejs");
@@ -54,14 +56,20 @@ app.get('/urls/:id', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
+app.get("/u/:id", (req, res) => {
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+});
 
-// app.get('*', (req, res) => {
-//   res.send(`404 Page Not Found`);
-// });
+app.get('*', (req, res) => {
+  res.send(`404 Page Not Found`);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
