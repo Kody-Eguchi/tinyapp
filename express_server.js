@@ -71,9 +71,20 @@ app.get("/u/:id", (req, res) => {
 
 //Get a Post request to remove a URL
 app.post("/urls/:id/delete", (req, res) => {
-  console.log(req.params.id);
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
+});
+
+//Edit a long URL
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const newLongURL = req.body.longURL;
+  for (let shortURL in urlDatabase) {
+    if (shortURL === id) {
+      urlDatabase[shortURL] = newLongURL;
+    }
+  }
+  res.redirect(`/urls/${id}`);
 });
 
 app.get('*', (req, res) => {
