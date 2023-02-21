@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
+//Parse values from the cookies
+const cookieParser = require('cookie-parser');
+
 //Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
  
@@ -18,6 +21,7 @@ const generateRandomString = function() {
 
 //Setting up EJS
 app.set("view engine", "ejs");
+app.use(cookieParser());
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -40,18 +44,28 @@ app.get("/hello", (req, res) => {
 //Render /urls page
 app.get('/urls', (req, res) => {
   //⬇️When sending variables to an EJS template, we need to send them inside an object, even if we are only sending one variable. This is so we can use the key of that variable (in the above case the key is urls) to access the data within our template.
-  const templateVars = {urls: urlDatabase};
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
   res.render("urls_index", templateVars);
 });
 
 //Render /urls/new page
 app.get('/urls/new', (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render("urls_new", templateVars);
 });
 
 //⬇️WThe end point for such a page will be in the format /urls/:id. The : in front of id indicates that id is a route parameter. This means that the value in this part of the url will be available in the req.params object.
 app.get('/urls/:id', (req, res) => {
-  const templateVars = {id: req.params.id, longURL: urlDatabase[req.params.id]};
+  const templateVars = {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -90,7 +104,7 @@ app.post('/urls/:id', (req, res) => {
 //Submit a username for login
 app.post('/login', (req, res) => {
   const username = req.body.username;
-  res.cookie("usernameCookie", username);
+  res.cookie("username", username);
   res.redirect('/urls');
 });
 
