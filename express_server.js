@@ -4,7 +4,6 @@ const PORT = 8080;
 
 //Parse values from the cookies
 const cookieParser = require('cookie-parser');
-const e = require('express');
 
 //Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
@@ -16,7 +15,6 @@ const generateRandomString = function() {
   for (let i = 0; i < 5; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   return result;
 };
 
@@ -127,25 +125,36 @@ app.get('/login', (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-//Submit a username for login
+
+//Submit a authentication info (email, password) via login
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
-  console.log(email, password);
-  // res.cookie("username", username);
-  res.redirect('/urls');
+  const {err, user} = getUserByEmail(email);
+
+  if (err) {
+    return res.send(`Error: 403 - user authentication failed`);
+  }
+
+  if (user.password !== password) {
+    return res.send(`Error: 403 - user authentication failed`);
+  }
+
+  const {id} = user;
+  res.cookie("user_id", id);
+  return res.redirect('/urls');
 });
 
-//Delete a cookie and logout
+//Delete a cookie upon logout
 app.post('/logout', (req, res) => {
-  // const username = req.body.username;
-  res.clearCookie('username');
-  res.redirect('/urls');
+  res.clearCookie("user_id");
+  res.redirect('/login');
 });
 
 //Create /register endpint
 app.get('/register', (req, res) => {
+  const userId = req.cookies.user_id;
   const templateVars = {
-    user: null,
+    user: users[userId]
   };
   res.render("urls_register", templateVars);
 });
@@ -162,40 +171,29 @@ const getUserByEmail = function(email) {
       result = { err: null, user:users[i]};
     }
   }
-  // console.log(result);
+
   return result;
 };
 
-//Submit a new registration (username+password)
+//Submit a new registration (email+password)
 app.post('/register', (req, res) => {
   const id = generateRandomString();
   const {email, password} = req.body;
-
   if (!email || !password) {
     return res.send('error: 400');
   }
-
-  const {err, user} = getUserByEmail(email);
-
+  const {err} = getUserByEmail(email);
   if (err) {
     users[id] = {
       id,
       email,
       password
     };
-
     res.cookie("user_id", id);
     return res.redirect('/urls');
   }
-
   res.send(`Error: 400 - a user with this email addres already exist `);
-
 });
-
-
-// app.get('/400', (req, res) => {
-//   res.send(`404 Page Not Found`);
-// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
