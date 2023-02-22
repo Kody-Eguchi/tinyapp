@@ -139,24 +139,50 @@ app.get('/register', (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+//Helper Function: getUserByEmail()
+const getUserByEmail = function(email) {
+  let result = {};
+  for (const i in users) {
+    if (users[i].email !== email) {
+      result =  {err: `User Not Found`, user: null};
+    }
+
+    if (users[i].email === email) {
+      result = { err: null, user:users[i]};
+    }
+  }
+  // console.log(result);
+  return result;
+};
+
 //Submit a new registration (username+password)
 app.post('/register', (req, res) => {
   const id = generateRandomString();
   const {email, password} = req.body;
-  users[id] = {
-    id,
-    email,
-    password
-  };
-  console.log(users[id]);
-  res.cookie("user_id", id);
-  res.redirect('/urls');
-  
-  
+
+  if (!email || !password) {
+    return res.send('error: 400');
+  }
+
+  const {err, user} = getUserByEmail(email);
+
+  if (err) {
+    users[id] = {
+      id,
+      email,
+      password
+    };
+
+    res.cookie("user_id", id);
+    return res.redirect('/urls');
+  }
+
+  res.send(`Error: 400 - a user with this email addres already exist `);
+
 });
 
 
-// app.get('*', (req, res) => {
+// app.get('/400', (req, res) => {
 //   res.send(`404 Page Not Found`);
 // });
 
