@@ -28,11 +28,24 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 app.get('/', (req, res) => {
   res.send(`Hello!`);
 });
 
-//Get a JSON data
+//Get a JSON data for urlDatabase
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -44,27 +57,30 @@ app.get("/hello", (req, res) => {
 //Render /urls page
 app.get('/urls', (req, res) => {
   //⬇️When sending variables to an EJS template, we need to send them inside an object, even if we are only sending one variable. This is so we can use the key of that variable (in the above case the key is urls) to access the data within our template.
+  const userId = req.cookies.user_id;
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user: users[userId]
   };
   res.render("urls_index", templateVars);
 });
 
 //Render /urls/new page
 app.get('/urls/new', (req, res) => {
+  const userId = req.cookies.user_id;
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[userId]
   };
   res.render("urls_new", templateVars);
 });
 
 //⬇️WThe end point for such a page will be in the format /urls/:id. The : in front of id indicates that id is a route parameter. This means that the value in this part of the url will be available in the req.params object.
 app.get('/urls/:id', (req, res) => {
+  const userId = req.cookies.user_id;
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user: users[userId]
   };
   res.render("urls_show", templateVars);
 });
@@ -118,9 +134,25 @@ app.post('/logout', (req, res) => {
 //Create a /register endpint
 app.get('/register', (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    user: null,
   };
   res.render("urls_register", templateVars);
+});
+
+//Submit a new registration (username+password)
+app.post('/register', (req, res) => {
+  const id = generateRandomString();
+  const {email, password} = req.body;
+  users[id] = {
+    id,
+    email,
+    password
+  };
+  console.log(users[id]);
+  res.cookie("user_id", id);
+  res.redirect('/urls');
+  
+  
 });
 
 
