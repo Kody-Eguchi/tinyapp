@@ -76,11 +76,17 @@ app.get('/urls/new', (req, res) => {
 //⬇️WThe end point for such a page will be in the format /urls/:id. The : in front of id indicates that id is a route parameter. This means that the value in this part of the url will be available in the req.params object.
 app.get('/urls/:id', (req, res) => {
   const userId = req.cookies.user_id;
+  const {id} = req.params;
   const templateVars = {
-    id: req.params.id,
+    id,
     longURL: urlDatabase[req.params.id],
     user: users[userId]
   };
+
+  if (!urlDatabase[id]) {
+    return res.send("<html><body>Error 404: Page Not Found - URL You Entered Does Not Exist</body></html>\n");
+  }
+
   res.render("urls_show", templateVars);
 });
 
