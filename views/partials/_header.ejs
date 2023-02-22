@@ -11,20 +11,28 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if(user){ %>
+    <div>
+      <a href="/register" class="text-light m-2">Register</a>
+      <% if(user){ %>
+      <a href="/login" class="text-light m-2">Logout</a>
+      <% } else{ %>
+      <a href="/login" class="text-light m-2">Login</a>
+      <% } %>
+    </div>
+    <!-- 
     <div>
       <form method="POST" action="/logout">
-        <span class="mr-3 text-light"> Logged in as: <%- user.email%></span>
+        <span class="mr-3 text-light"> Logged in as: </span>
         <button type="submit" class="bg-light text-info border border-info rounded">Logout</button>
       </form>
     </div>
-    <% } else{ %>
-    <div>
-      <form method="POST" action="/login">
+    
+    <div> -->
+    <!-- <form method="POST" action="/login">
         <input type="text" name="username" class="mr-2">
         <button type="submit" class="bg-light text-info border border-info rounded">Login</button>
-      </form>
+      </form> -->
     </div>
-    <% } %>
+
   </nav>
 </header>
