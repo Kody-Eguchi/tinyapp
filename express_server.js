@@ -86,6 +86,10 @@ app.get('/urls/:id', (req, res) => {
 
 //Generate a shortened URL and create a key-value pair
 app.post("/urls", (req, res) => {
+  const userId = req.cookies.user_id;
+  if (!userId) {
+    return res.send('create an user account/login to use URL shortener');
+  }
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
