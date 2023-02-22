@@ -4,6 +4,7 @@ const PORT = 8080;
 
 //Parse values from the cookies
 const cookieParser = require('cookie-parser');
+const e = require('express');
 
 //Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
@@ -117,10 +118,20 @@ app.post('/urls/:id', (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+//Creat /login endpoint
+app.get('/login', (req, res) => {
+  const userId = req.cookies.user_id;
+  const templateVars = {
+    user: users[userId]
+  };
+  res.render("urls_login", templateVars);
+});
+
 //Submit a username for login
 app.post('/login', (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
+  const {email, password} = req.body;
+  console.log(email, password);
+  // res.cookie("username", username);
   res.redirect('/urls');
 });
 
@@ -131,7 +142,7 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 });
 
-//Create a /register endpint
+//Create /register endpint
 app.get('/register', (req, res) => {
   const templateVars = {
     user: null,
