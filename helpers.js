@@ -29,9 +29,11 @@ const getUserByEmail = function(email, database) {
 
     if (database[id].email === email) {
       user = { err: null, user:database[id]};
+      return user;
     }
   }
   return user;
 };
+
 
 module.exports = {generateRandomString, urlsForUser, getUserByEmail};
