@@ -156,11 +156,11 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
   const {err, user} = getUserByEmail(email, users);
-  const passwordCheck = bcrypt.compareSync(password, user.password);
+  
   if (err) {
     return res.send("<html><body>Error: 403 - user authentication failed</html></body>");
   }
-
+  const passwordCheck = bcrypt.compareSync(password, user.password);
   if (!passwordCheck) {
     return res.send("<html><body>Error: 403 - user authentication failed</html></body>");
   }
