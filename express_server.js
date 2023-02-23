@@ -2,11 +2,11 @@
 const express = require('express');
 const app = express();
 const PORT = 8080;
-//bcrypt: to hash password
 const bcrypt = require("bcryptjs");
-//Cookie value encrypting
 const cookieSession = require('cookie-session');
 
+//IMPORT
+const {generateRandomString, urlsForUser, getUserByEmail} = require("./helpers");
 
 /*----------Middelwares----------*/
 //Parse request.body to human readable
@@ -18,47 +18,7 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000
 }));
 
-/*----------HELPER FUNCTION----------*/
-
-//generateRandomString function
-const generateRandomString = function() {
-  let result = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 5; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
-
-//returns the URLs where the userID is equal to the id of the currently logged-in user
-const urlsForUser = function(id) {
-  let filteredDatabase = {};
-  for (const [urlID, urlObj] of Object.entries(urlDatabase)) {
-    if (urlObj.userID === id) {
-      filteredDatabase[urlID] = urlObj;
-    }
-  }
-  return filteredDatabase;
-};
-
-//Helper Function: getUserByEmail()
-const getUserByEmail = function(email) {
-  let result = {};
-  for (const i in users) {
-    if (users[i].email !== email) {
-      result =  {err: `User Not Found`, user: null};
-    }
-
-    if (users[i].email === email) {
-      result = { err: null, user:users[i]};
-    }
-  }
-
-  return result;
-};
-
 /*----------Databases----------*/
-
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -83,20 +43,15 @@ const users = {
   },
 };
 
-
-
-
 /*----------Routes----------*/
-
-
 app.get('/', (req, res) => {
   res.send(`Hello!`);
 });
 
 // Get a JSON data for urlDatabase
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
 
 //Render /urls page
 app.get('/urls', (req, res) => {
@@ -105,8 +60,7 @@ app.get('/urls', (req, res) => {
   if (!userId) {
     return res.send('create an user account/login to use URL shortener');
   }
-  const filteredDatabase = urlsForUser(userId);
-  
+  const filteredDatabase = urlsForUser(userId, urlDatabase);
   const templateVars = {
     urls: filteredDatabase,
     user: users[userId]
@@ -133,7 +87,6 @@ app.get('/urls/:id', (req, res) => {
   if (urlDatabase[id].userID !== userId) {
     return res.send("<html><body>Error 404: Page Can Not Be Accessed - You Are Not Authorized to Access This Page</body></html>\n");
   }
-
   const {longURL} = urlDatabase[id];
   const templateVars = {
     id,
@@ -181,7 +134,6 @@ app.post('/urls/:id', (req, res) => {
   if (urlDatabase[id].userID !== userId) {
     return res.send("<html><body>Error 404: You Cannot Edit An URL Created by Others</body></html>\n");
   }
-
   const newLongURL = req.body.longURL;
   for (let shortURL in urlDatabase) {
     if (shortURL === id) {
@@ -203,14 +155,14 @@ app.get('/login', (req, res) => {
 //Submit a authentication info (email, password) via login
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
-  const {err, user} = getUserByEmail(email);
+  const {err, user} = getUserByEmail(email, users);
   const passwordCheck = bcrypt.compareSync(password, user.password);
   if (err) {
-    return res.send(`Error: 403 - user authentication failed`);
+    return res.send("<html><body>Error: 403 - user authentication failed</html></body>");
   }
 
   if (!passwordCheck) {
-    return res.send(`Error: 403 - user authentication failed`);
+    return res.send("<html><body>Error: 403 - user authentication failed</html></body>");
   }
 
   const {id} = user;
@@ -233,7 +185,6 @@ app.get('/register', (req, res) => {
   res.render("urls_register", templateVars);
 });
 
-
 //Submit a new registration (email+password)
 app.post('/register', (req, res) => {
   const id = generateRandomString();
@@ -241,7 +192,7 @@ app.post('/register', (req, res) => {
   if (!email || !password) {
     return res.send('error: 400');
   }
-  const {err} = getUserByEmail(email);
+  const {err} = getUserByEmail(email, users);
   if (err) {
     users[id] = {
       id,
