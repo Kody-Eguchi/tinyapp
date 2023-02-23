@@ -1,16 +1,25 @@
+/* eslint-disable camelcase */
 const express = require('express');
 const app = express();
 const PORT = 8080;
-
-//bcrypt: to encrypt password
+//bcrypt: to hash password
 const bcrypt = require("bcryptjs");
+//Cookie value encrypting
+const cookieSession = require('cookie-session');
 
-//Parse values from the cookies
-const cookieParser = require('cookie-parser');
 
+/*----------Middelwares----------*/
 //Parse request.body to human readable
 app.use(express.urlencoded({ extended: true }));
- 
+app.set("view engine", "ejs");
+app.use(cookieSession({
+  name: 'session',
+  keys: ['user_id'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
+
+/*----------HELPER FUNCTION----------*/
+
 //generateRandomString function
 const generateRandomString = function() {
   let result = '';
@@ -21,10 +30,6 @@ const generateRandomString = function() {
   return result;
 };
 
-//Setting up EJS
-app.set("view engine", "ejs");
-app.use(cookieParser());
-
 //returns the URLs where the userID is equal to the id of the currently logged-in user
 const urlsForUser = function(id) {
   let filteredDatabase = {};
@@ -33,9 +38,26 @@ const urlsForUser = function(id) {
       filteredDatabase[urlID] = urlObj;
     }
   }
-  console.log(filteredDatabase);
   return filteredDatabase;
 };
+
+//Helper Function: getUserByEmail()
+const getUserByEmail = function(email) {
+  let result = {};
+  for (const i in users) {
+    if (users[i].email !== email) {
+      result =  {err: `User Not Found`, user: null};
+    }
+
+    if (users[i].email === email) {
+      result = { err: null, user:users[i]};
+    }
+  }
+
+  return result;
+};
+
+/*----------Databases----------*/
 
 const urlDatabase = {
   b6UTxQ: {
@@ -61,9 +83,15 @@ const users = {
   },
 };
 
-// app.get('/', (req, res) => {
-//   res.send(`Hello!`);
-// });
+
+
+
+/*----------Routes----------*/
+
+
+app.get('/', (req, res) => {
+  res.send(`Hello!`);
+});
 
 // Get a JSON data for urlDatabase
 // app.get("/urls.json", (req, res) => {
@@ -73,7 +101,7 @@ const users = {
 //Render /urls page
 app.get('/urls', (req, res) => {
   //⬇️When sending variables to an EJS template, we need to send them inside an object, even if we are only sending one variable. This is so we can use the key of that variable (in the above case the key is urls) to access the data within our template.
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   if (!userId) {
     return res.send('create an user account/login to use URL shortener');
   }
@@ -88,7 +116,7 @@ app.get('/urls', (req, res) => {
 
 //Render /urls/new page
 app.get('/urls/new', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const templateVars = {
     user: users[userId]
   };
@@ -97,7 +125,7 @@ app.get('/urls/new', (req, res) => {
 
 //⬇️WThe end point for such a page will be in the format /urls/:id. The : in front of id indicates that id is a route parameter. This means that the value in this part of the url will be available in the req.params object.
 app.get('/urls/:id', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const {id} = req.params;
   if (!urlDatabase[id]) {
     return res.send("<html><body>Error 404: Page Not Found - URL You Entered Does Not Exist</body></html>\n");
@@ -117,7 +145,7 @@ app.get('/urls/:id', (req, res) => {
 
 //Generate a shortened URL and create a key-value pair
 app.post("/urls", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   if (!userId) {
     return res.send('create an user account/login to use URL shortener');
   }
@@ -137,7 +165,7 @@ app.get("/u/:id", (req, res) => {
 
 //Get a Post request to remove a URL
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const {id} = req.params;
   if (urlDatabase[id].userID !== userId) {
     return res.send("<html><body>Error 404: You Cannot Delete An URL Created by Others</body></html>\n");
@@ -148,7 +176,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //Edit a long URL
 app.post('/urls/:id', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const {id} = req.params;
   if (urlDatabase[id].userID !== userId) {
     return res.send("<html><body>Error 404: You Cannot Edit An URL Created by Others</body></html>\n");
@@ -165,63 +193,46 @@ app.post('/urls/:id', (req, res) => {
 
 //Creat /login endpoint
 app.get('/login', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const templateVars = {
     user: users[userId]
   };
   res.render("urls_login", templateVars);
 });
 
-
 //Submit a authentication info (email, password) via login
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
   const {err, user} = getUserByEmail(email);
   const passwordCheck = bcrypt.compareSync(password, user.password);
-  console.log(passwordCheck);
   if (err) {
     return res.send(`Error: 403 - user authentication failed`);
   }
 
-  if (!passwordCheck) {//🚨🚨🚨
+  if (!passwordCheck) {
     return res.send(`Error: 403 - user authentication failed`);
   }
 
   const {id} = user;
-  res.cookie("user_id", id);
+  req.session.user_id = id;
   return res.redirect('/urls');
 });
 
 //Delete a cookie upon logout
 app.post('/logout', (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect('/login');
 });
 
 //Create /register endpint
 app.get('/register', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const templateVars = {
     user: users[userId]
   };
   res.render("urls_register", templateVars);
 });
 
-//Helper Function: getUserByEmail()
-const getUserByEmail = function(email) {
-  let result = {};
-  for (const i in users) {
-    if (users[i].email !== email) {
-      result =  {err: `User Not Found`, user: null};
-    }
-
-    if (users[i].email === email) {
-      result = { err: null, user:users[i]};
-    }
-  }
-
-  return result;
-};
 
 //Submit a new registration (email+password)
 app.post('/register', (req, res) => {
@@ -237,7 +248,7 @@ app.post('/register', (req, res) => {
       email,
       password: bcrypt.hashSync(password, 10),
     };
-    res.cookie("user_id", id);
+    req.session.user_id = id;
     return res.redirect('/urls');
   }
   res.send(`Error: 400 - a user with this email addres already exist `);
