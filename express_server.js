@@ -22,10 +22,17 @@ const generateRandomString = function() {
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
+//returns the URLs where the userID is equal to the id of the currently logged-in user
+const urlsForUser = function(id) {
+  let filteredDatabase = {};
+  for (const [urlID, urlObj] of Object.entries(urlDatabase)) {
+    if (urlObj.userID === id) {
+      filteredDatabase[urlID] = urlObj;
+    }
+  }
+  console.log(filteredDatabase);
+  return filteredDatabase;
+};
 
 const urlDatabase = {
   b6UTxQ: {
@@ -64,8 +71,13 @@ app.get("/urls.json", (req, res) => {
 app.get('/urls', (req, res) => {
   //⬇️When sending variables to an EJS template, we need to send them inside an object, even if we are only sending one variable. This is so we can use the key of that variable (in the above case the key is urls) to access the data within our template.
   const userId = req.cookies.user_id;
+  if (!userId) {
+    return res.send('create an user account/login to use URL shortener');
+  }
+  const filteredDatabase = urlsForUser(userId);
+  
   const templateVars = {
-    urls: urlDatabase,
+    urls: filteredDatabase,
     user: users[userId]
   };
   res.render("urls_index", templateVars);
@@ -87,6 +99,10 @@ app.get('/urls/:id', (req, res) => {
   if (!urlDatabase[id]) {
     return res.send("<html><body>Error 404: Page Not Found - URL You Entered Does Not Exist</body></html>\n");
   }
+  if (urlDatabase[id].userID !== userId) {
+    return res.send("<html><body>Error 404: Page Can Not Be Accessed - You Are Not Authorized to Access This Page</body></html>\n");
+  }
+
   const {longURL} = urlDatabase[id];
   const templateVars = {
     id,
@@ -118,13 +134,23 @@ app.get("/u/:id", (req, res) => {
 
 //Get a Post request to remove a URL
 app.post("/urls/:id/delete", (req, res) => {
+  const userId = req.cookies.user_id;
+  const {id} = req.params;
+  if (urlDatabase[id].userID !== userId) {
+    return res.send("<html><body>Error 404: You Cannot Delete An URL Created by Others</body></html>\n");
+  }
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
 
 //Edit a long URL
 app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
+  const userId = req.cookies.user_id;
+  const {id} = req.params;
+  if (urlDatabase[id].userID !== userId) {
+    return res.send("<html><body>Error 404: You Cannot Edit An URL Created by Others</body></html>\n");
+  }
+
   const newLongURL = req.body.longURL;
   for (let shortURL in urlDatabase) {
     if (shortURL === id) {
