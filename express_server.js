@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
+//bcrypt: to encrypt password
+const bcrypt = require("bcryptjs");
+
 //Parse values from the cookies
 const cookieParser = require('cookie-parser');
 
@@ -63,9 +66,9 @@ const users = {
 // });
 
 // Get a JSON data for urlDatabase
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
 //Render /urls page
 app.get('/urls', (req, res) => {
@@ -174,12 +177,13 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const {email, password} = req.body;
   const {err, user} = getUserByEmail(email);
-
+  const passwordCheck = bcrypt.compareSync(password, user.password);
+  console.log(passwordCheck);
   if (err) {
     return res.send(`Error: 403 - user authentication failed`);
   }
 
-  if (user.password !== password) {
+  if (!passwordCheck) {//🚨🚨🚨
     return res.send(`Error: 403 - user authentication failed`);
   }
 
@@ -231,7 +235,7 @@ app.post('/register', (req, res) => {
     users[id] = {
       id,
       email,
-      password
+      password: bcrypt.hashSync(password, 10),
     };
     res.cookie("user_id", id);
     return res.redirect('/urls');
