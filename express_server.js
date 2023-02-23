@@ -22,9 +22,20 @@ const generateRandomString = function() {
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {
@@ -40,17 +51,13 @@ const users = {
   },
 };
 
-app.get('/', (req, res) => {
-  res.send(`Hello!`);
-});
+// app.get('/', (req, res) => {
+//   res.send(`Hello!`);
+// });
 
-//Get a JSON data for urlDatabase
+// Get a JSON data for urlDatabase
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //Render /urls page
@@ -77,16 +84,15 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const userId = req.cookies.user_id;
   const {id} = req.params;
-  const templateVars = {
-    id,
-    longURL: urlDatabase[req.params.id],
-    user: users[userId]
-  };
-
   if (!urlDatabase[id]) {
     return res.send("<html><body>Error 404: Page Not Found - URL You Entered Does Not Exist</body></html>\n");
   }
-
+  const {longURL} = urlDatabase[id];
+  const templateVars = {
+    id,
+    longURL,
+    user: users[userId]
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -97,14 +103,16 @@ app.post("/urls", (req, res) => {
     return res.send('create an user account/login to use URL shortener');
   }
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL]["longURL"] = req.body.longURL;
+  urlDatabase[shortURL]["userID"] = userId;
   res.redirect(`/urls/${shortURL}`);
 });
 
 //Get a value from a form input
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-  const longURL = urlDatabase[shortURL];
+  const {longURL} = urlDatabase[shortURL];
   res.redirect(longURL);
 });
 
@@ -120,7 +128,7 @@ app.post('/urls/:id', (req, res) => {
   const newLongURL = req.body.longURL;
   for (let shortURL in urlDatabase) {
     if (shortURL === id) {
-      urlDatabase[shortURL] = newLongURL;
+      urlDatabase[shortURL].longURL = newLongURL;
     }
   }
   res.redirect(`/urls/${id}`);
