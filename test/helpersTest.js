@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 
-const { getUserByEmail } = require('../helpers.js');
+const {urlsForUser, getUserByEmail} = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -15,15 +15,38 @@ const testUsers = {
   }
 };
 
-describe('getUserByEmail', function() {
+describe('---TEST: getUserByEmail---', function() {
   it('should return a user with valid email', function() {
     const {user} = getUserByEmail("user@example.com", testUsers);
     const expectedUserID = "userRandomID";
     assert.equal(user.id, expectedUserID);
   });
 
-  it('should return a error message with invalid email', function() {
-    const {err} = getUserByEmail("wrong@example.com", testUsers);
-    assert.isNotNull(err);
+  it('should return null with invalid email', function() {
+    const {user} = getUserByEmail("wrong@example.com", testUsers);
+    assert.isNull(user);
   });
 });
+
+
+const testDatabase = {
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+};
+
+describe('---TEST: urlsForUser---', function() {
+  it('should return filtered database with userID of "aJ48lW"', function() {
+    const filteredUrlObj = urlsForUser("aJ48lW", testDatabase);
+    const keyArr = Object.keys(filteredUrlObj);
+    assert.equal(filteredUrlObj[keyArr[0]].userID, "aJ48lW");
+  });
+
+});
+
+
