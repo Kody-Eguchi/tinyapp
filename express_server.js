@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080;
 const bcrypt = require("bcryptjs");
 const cookieSession = require('cookie-session');
+const methodOverride = require('method-override');
 
 //IMPORT
 const {generateRandomString, urlsForUser, getUserByEmail} = require("./helpers");
@@ -17,6 +18,7 @@ app.use(cookieSession({
   keys: ['user_id'],
   maxAge: 24 * 60 * 60 * 1000
 }));
+app.use(methodOverride('_method'));
 
 /*----------Databases----------*/
 const urlDatabase = {
@@ -117,7 +119,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 //Get a Post request to remove a URL
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const {id} = req.params;
   if (urlDatabase[id].userID !== userId) {
@@ -128,7 +130,7 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 //Edit a long URL
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   const userId = req.session.user_id;
   const {id} = req.params;
   if (urlDatabase[id].userID !== userId) {

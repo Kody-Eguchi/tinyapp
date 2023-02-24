@@ -17,7 +17,7 @@
       <p class="card-text">
         Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
       </p>
-      <form method="POST" action="/urls/<%= id %>" class="bg-secondary">
+      <form method="POST" action="/urls/<%= id %>?_method=PUT" class="bg-secondary">
         <label for="edit" class="col" style="margin: 0 auto; margin-top: 1rem;">
           <h5 class="text-light">Edit</h5>
         </label>
